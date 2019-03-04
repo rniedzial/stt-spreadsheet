@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+
+  <style>
+    div.settings {
+      display: grid;
+      grid-template-columns: max-content max-content;
+      grid-gap: 5px;
+    }
+
+    div.settings .text-label {
+      text-align: right;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="settings">
+    <label class="text-label" for="user-name">Username:</label>
+    <input type="text" name="name" id="user-name" value="">
+
+    <label class="text-label" for="user-password">Password:</label>
+    <input type="password" name="password" id="user-password" value="">
+  </div>
+
+  <br/>
+
+  <div id="error" class="error"></div>
+
+  <div class="block">
+    <button class="action" id="login-btn">Login</button>
+    <button id="cancel-btn">Cancel</button>
+  </div>
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js">
+  </script>
+  <script>
+    $(function () {
+      $('#login-btn').click(login);
+      $('#cancel-btn').click(cancel);
+    });
+
+    function cancel() {
+      google.script.host.close();
+    }
+
+    function login() {
+      this.disabled = true;
+      $('#error').html('');
+      var user = $('#user-name').val();
+      var pass = $('#user-password').val();
+
+      google.script.run
+        .withSuccessHandler(
+          function (loginResult, element) {
+            element.disabled = false;
+            google.script.host.close();
+          })
+        .withFailureHandler(
+          function (msg, element) {
+            element.disabled = false;
+            $('#error').html('An error occured. Please check you entered your username and password correctly and try again.');
+          })
+        .withUserObject(this)
+        .login(user, pass);
+    }
+  </script>
+
+</body>
+
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+  <!-- The CSS package above applies Google styling to buttons and other elements. -->
+
+  <style>
+    .branding-below {
+      bottom: 56px;
+      top: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="sidebar branding-below">
+    <div class="block">
+      <h1>Welcome <?= userName ?>!</h1>
+
+      <div class="block">
+        <button id="logout-btn">Switch account</button>
+        <button id="clearsheets-btn">Clear sheets</button>
+      </div>
+
+      <div class="block">
+        <input type="checkbox" id="load-frozen">
+        <label for="load-frozen">Load frozen crew stats (<i>slower</i>)</label>
+      </div>
+
+      <div class="block">
+        <input type="checkbox" id="load-cadet" checked>
+        <label for="load-cadet">Load cadet missions</label>
+      </div>
+
+      <div class="block">
+        <input type="checkbox" id="load-items" checked>
+        <label for="load-items">Load item details</label>
+      </div>
+
+      <div class="block">
+        <input type="checkbox" id="load-ships" checked>
+        <label for="load-ships">Load ship details</label>
+      </div>
+
+      <div class="block">
+        <input type="checkbox" id="load-snap" checked>
+        <label for="load-snap">Load stats snapshot</label>
+      </div>
+
+      <br/>
+
+      <div class="block">
+        <button class="action" id="load-data">Load data</button>
+      </div>
+
+      <br/>
+
+      <div id="error" class="error"></div>
+      <div id="info" class="info"></div>
+    </div>
+  </div>
+
+  <div class="sidebar bottom">
+    <span class="gray branding-text">STT crew sheet by
+      <a href='https://iampicard.github.io/'>IAmPicard</a>
+    </span>
+  </div>
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js">
+  </script>
+  <script>
+    $(function () {
+      $('#logout-btn').click(logout);
+      $('#clearsheets-btn').click(clearSheets);
+      $('#load-data').click(loadData);
+    });
+
+    function hideme() {
+      google.script.host.close();
+    }
+
+    function logout() {
+      google.script.run.withSuccessHandler(hideme).logout();
+    }
+
+    function clearSheets() {
+      google.script.run.clearSheets();
+    }
+
+    function loadData() {
+      this.disabled = true;
+      disableDuringLoad(true);
+      status(false, "Please wait while your crew is loading...");
+      google.script.run
+        .withSuccessHandler(
+          function (playerData, element) {
+            status(false, "Hi, " + playerData.name + "! Your crew roster is loaded.");
+            element.disabled = false;
+            disableDuringLoad(false);
+
+            // Now load cadet missions (if asked for)
+            if ($('#load-cadet').prop('checked')) {
+              loadCadet(element, playerData.cadetMissions);
+            }
+          })
+        .withFailureHandler(
+          function (msg, element) {
+            status(true, "An error occured while loading crew. Please try again later.", msg);
+            element.disabled = false;
+            disableDuringLoad(false);
+          })
+        .withUserObject(this)
+        .loadCrew($('#load-frozen').prop('checked'), $('#load-items').prop('checked'), $('#load-ships').prop('checked'), $('#load-snap').prop('checked'));
+    }
+
+    function loadCadet(el, cadetMissionIds) {
+      el.disabled = true;
+      disableDuringLoad(true);
+      status(false, "Please wait while your cadet mission stats are loading...");
+      google.script.run
+        .withSuccessHandler(
+          function (msg, element) {
+            status(false, "Cadet missions have finished loading.");
+            element.disabled = false;
+            disableDuringLoad(false);
+          })
+        .withFailureHandler(
+          function (msg, element) {
+            status(true, "An error occured while loading cadet missions. Please try again later.", msg);
+            element.disabled = false;
+            disableDuringLoad(false);
+          })
+        .withUserObject(el)
+        .loadCadetMissionData(cadetMissionIds);
+    }
+
+    function disableDuringLoad(disabled) {
+      $('#load-cadet').prop('disabled', disabled);
+      $('#load-frozen').prop('disabled', disabled);
+      $('#load-items').prop('disabled', disabled);
+      $('#load-ships').prop('disabled', disabled);
+      $('#load-snap').prop('disabled', disabled);
+      $('#clearsheets-btn').prop('disabled', disabled);
+      $('#logout-btn').prop('disabled', disabled);
+    }
+
+    function status(error, msg, errorDetails) {
+      $('#error').html('');
+      $('#info').html('');
+
+      if (error) {
+        $('#error').html(msg);
+
+        if (errorDetails) {
+          $('#info').html('<details><summary>Error details (for bug reports)</summary><small>' + errorDetails + '</small></details>');
+        }
+      } else {
+        $('#info').html(msg);
+      }
+    }
+  </script>
+
+</body>
+
+</html>
